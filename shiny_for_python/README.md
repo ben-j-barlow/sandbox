@@ -2,7 +2,11 @@
 
 This was produced whilst learning how to build a Databricks-hosted app that reads from Unity Catalog. Notes are therefore tailored to his app.
 
-## Decorators
+## General
+
+* [R Shiny to Shiny for Python Guide](https://gist.github.com/wch/616934a6fe57636434154c112ac8a718)
+
+## Useful Decorators
 
 * `@reactive.effect`: Function automatically re-runs whenever any of the reactive values it reads inside its body change. Great for **triggering a database query** (to Unity Catalog).
 * `@reactive.event`: Similar to `effect` but only re-runs when the specific reactive values (or input functions) passed as arguments to the decorator change. Example usage: `@reactive.event(input.submit_query)`.
@@ -26,5 +30,7 @@ def handle_query():
 * `@reactive.isolate`: Create a non-reactive scope within a reactive scope. Prevents triggering. Imagine controling the title of a plot through a text box, but you don't want to re-run the plot generation upon changing the title. Inside the `@reactive.effect` that generates the Plotly figure use `title = reactive.isolate(input.plot_title)`.
 * `@reactive.extended_task`: Call like a regular function. Designed for long-running processes, without freezing the UI. Highly relevant for queries running in the background.
 
-## Dynamic UI
+## Dynamic UI and Plots
 
+* [Beyond R Shiny: Shiny for Python's Clean Design for Dynamic Plot Management](https://www.appsilon.com/post/shiny-for-python-clean-design-for-dynamic-plot-management)
+* [Dynamic UI Docs](https://shiny.posit.co/py/api/express/express.ui.panel_conditional.html)
