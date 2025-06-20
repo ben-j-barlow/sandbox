@@ -48,9 +48,7 @@ def server(input, output, session):
     @render.ui
     def plots():
         # Ensure value is an integer and available
-        x = input.n_plots()
-        x = None
-        n_plots = int(x)
+        n_plots = int(req(input.n_plots()))
         # Dynamically create server-side functions for each plot
         for i in range(1, n_plots + 1):
             plot_server(f"plot_{i}", plot_id=i, max_plots=MAX_PLOTS)
