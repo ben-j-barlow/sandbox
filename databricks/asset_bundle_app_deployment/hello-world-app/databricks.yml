@@ -1,0 +1,24 @@
+bundle:
+  name: hello_world_bundle
+
+resources:
+  apps:
+    hello_world_app:
+      name: 'hello-world-app'
+      source_code_path: . # This assumes the app source code is at the root of the project.
+      description: 'A Databricks app'
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://myworkspace.cloud.databricks.com
+  prod:
+    mode: production
+    workspace:
+      host: https://myworkspace.cloud.databricks.com
+      root_path: /Workspace/Users/someone@example.com/.bundle/${bundle.name}/${bundle.target}
+    permissions:
+      - user_name: someone@example.com
+        level: CAN_MANAGE
