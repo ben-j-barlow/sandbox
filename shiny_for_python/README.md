@@ -5,6 +5,7 @@ This was produced whilst learning how to build a Databricks-hosted app that read
 ## General
 
 * [R Shiny to Shiny for Python Guide](https://gist.github.com/wch/616934a6fe57636434154c112ac8a718)
+* [Using AI well](https://www.appsilon.com/post/shiny-vscode-copilot)
 
 ## Useful Decorators
 
@@ -29,6 +30,10 @@ def handle_query():
 
 * `@reactive.isolate`: Create a non-reactive scope within a reactive scope. Prevents triggering. Imagine controling the title of a plot through a text box, but you don't want to re-run the plot generation upon changing the title. Inside the `@reactive.effect` that generates the Plotly figure use `title = reactive.isolate(input.plot_title)`.
 * `@reactive.extended_task`: Call like a regular function. Designed for long-running processes, without freezing the UI. Highly relevant for queries running in the background.
+
+# Useful Functions
+
+* [req](https://shiny.posit.co/r/reference/shiny/0.14/req.html)
 
 ## Dynamic UI and Plots
 
