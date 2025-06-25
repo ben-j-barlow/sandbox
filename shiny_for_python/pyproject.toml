@@ -11,3 +11,8 @@ dependencies = [
     "shiny>=1.4.0",
     "shinywidgets>=0.6.2",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]
