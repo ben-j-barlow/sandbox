@@ -5,7 +5,9 @@ from databricks import sql
 import os
 
 # Defined in `app.yaml`
-assert os.getenv("DATABRICKS_WAREHOUSE_ID"), "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
+assert os.getenv("DATABRICKS_WAREHOUSE_ID"), (
+    "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
+)
 
 _INITIAL_QUERY = """
 SELECT
@@ -67,6 +69,7 @@ app_ui = ui.page_navbar(
 # Databricks configuration
 cfg = config.Config()
 
+
 def server(input, output, session):
     # Define the extended task to execute the query asynchronously
     @ui.bind_task_button(button_id="submit_query")
@@ -74,7 +77,7 @@ def server(input, output, session):
     async def run_query_task(query: str):
         try:
             # Get the user access token from the session request header
-            user_token = session.http_conn.headers.get('X-Forwarded-Access-Token', None)
+            user_token = session.http_conn.headers.get("X-Forwarded-Access-Token", None)
             # Create a connection with the user's access token
             connection_with_user_creds = sql.connect(
                 server_hostname=cfg.host,
@@ -85,11 +88,13 @@ def server(input, output, session):
             connection_with_service_principal_creds = sql.connect(
                 server_hostname=cfg.host,
                 http_path=f"/sql/1.0/warehouses/{cfg.warehouse_id}",
-                credentials_provider=lambda: cfg.authenticate  # Uses SP credentials from the environment variables
+                credentials_provider=lambda: cfg.authenticate,  # Uses SP credentials from the environment variables
             )
 
             # Query the SQL data with the user credentials
-            res = await asyncio.to_thread(execute_query, connection_with_user_creds, query)
+            res = await asyncio.to_thread(
+                execute_query, connection_with_user_creds, query
+            )
             # In order to query with Service Principal credentials, comment the above line and uncomment the below line
             # res = await asyncio.to_thread(execute_query, connection_with_service_principal_creds, query)
             ui.update_action_button("cancel_query", disabled=True)
