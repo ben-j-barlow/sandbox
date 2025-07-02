@@ -1,14 +1,10 @@
 from shiny import reactive
-from shiny.express import input, ui, module
+from shiny.express import ui, module
 from shinywidgets import render_plotly
 import numpy as np
-import plotly.express as px
 import pandas as pd
-import logging
+from datetime import datetime
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
-
-logger = logging.getLogger(__name__)
 
 @reactive.calc
 def df():
@@ -28,7 +24,7 @@ def plot_area(input, output, session):
                 import plotly.express as px
 
                 df_ = df()
-                p = px.line(x=df_["x"], y=df_["y"] * mult.get())
+                p = px.line(x=df_["x"], y=df_["y"] * mult.get(), title=f"time is {str(datetime.now())}")
                 p.layout.update(showlegend=False)
                 return p
 

@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from shiny import ui, render, App, module, reactive
+from datetime import datetime
 
 MAX_PLOTS = 5
 
@@ -10,7 +11,6 @@ MAX_PLOTS = 5
 def plot_ui():
     # Returns a placeholder for a plot that will be rendered server-side
     return ui.output_plot("plot")
-
 
 # Server module to generate and render each plot
 @module.server
@@ -27,7 +27,7 @@ def plot_server(
         ax.scatter(x, y)
         ax.set_xlim(0, max_plots)
         ax.set_ylim(0, max_plots)
-        ax.set_title(f"1: {plot_id}. mult is {mult}. n is {max_plots}")
+        ax.set_title(f"1: {plot_id}. mult is {mult}. n is {max_plots}. time is {str(datetime.now())}")
         return fig
 
 
