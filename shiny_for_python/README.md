@@ -6,6 +6,9 @@ This was produced whilst learning how to build a Databricks-hosted app that read
 
 * [R Shiny to Shiny for Python Guide](https://gist.github.com/wch/616934a6fe57636434154c112ac8a718)
 * [Using AI well](https://www.appsilon.com/post/shiny-vscode-copilot)
+* [UI Guide (Shiny Express)](https://shiny.posit.co/py/docs/user-interfaces.html)
+* [Reactive file reading](https://shiny.posit.co/py/docs/reactive-patterns.html#file)
+* [Collapsable tabs](https://shiny.posit.co/py/api/core/ui.accordion_panel.html#shiny.ui.accordion_panel)
 
 ## Useful Decorators
 
@@ -31,11 +34,16 @@ def handle_query():
 * `@reactive.isolate`: Create a non-reactive scope within a reactive scope. Prevents triggering. Imagine controling the title of a plot through a text box, but you don't want to re-run the plot generation upon changing the title. Inside the `@reactive.effect` that generates the Plotly figure use `title = reactive.isolate(input.plot_title)`.
 * `@reactive.extended_task`: Call like a regular function. Designed for long-running processes, without freezing the UI. Highly relevant for queries running in the background.
 
-# Useful Functions
+# Useful Functions / Tips
 
 * [req](https://shiny.posit.co/r/reference/shiny/0.14/req.html)
+* use `ui.input_task_button` instead of `ui.input_action_button` to invoke an extended task task, since the former automatically prevents subsequent clicks until the task completes
 
 ## Dynamic UI and Plots
 
 * [Beyond R Shiny: Shiny for Python's Clean Design for Dynamic Plot Management](https://www.appsilon.com/post/shiny-for-python-clean-design-for-dynamic-plot-management)
 * [Dynamic UI Docs](https://shiny.posit.co/py/api/express/express.ui.panel_conditional.html)
+
+## Understanding Non Blocking Tasks
+
+Main docs are [here](https://shiny.posit.co/py/docs/nonblocking.html#:~:text=Shiny%20has%20async%20support%20as,parts%20of%20your%20Shiny%20app).
