@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "gstoolssandbox"
+version = "0.1.0"
+description = ""
+authors = ["Ben Barlow <ben-j-barlow.1@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+gstools = "1.5.2"
+matplotlib = "3.9.0"
+jupyter = "1.0.0"
+vtk = "^9.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

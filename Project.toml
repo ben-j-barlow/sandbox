@@ -1,0 +1,6 @@
+[deps]
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+MeshIO = "7269a6da-0436-5bbc-96c2-40638cbb6118"
+ReadVTK = "dc215faf-f008-4882-a9f7-a79a826fadc3"

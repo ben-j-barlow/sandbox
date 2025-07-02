@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "web-scrape"
+version = "0.1.0"
+description = ""
+authors = ["Ben Barlow <ben-j-barlow.1@gmail.com>"]
+readme = "README.md"
+packages = [{include = "web_scrape"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.31.0"
+jupyter = "^1.0.0"
+bs4 = "^0.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

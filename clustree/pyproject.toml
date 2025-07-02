@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "sandbox"
+version = "0.1.0"
+description = ""
+authors = ["Ben Barlow <ben-j-barlow.1@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+matplotlib = "^3.7.1"
+jupyter = "^1.0.0"
+igraph = "^0.10.4"
+opencv-python = "^4.7.0.72"
+clustree = "^0.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
