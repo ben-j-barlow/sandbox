@@ -1,18 +1,37 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from shiny import ui, render, App, module, reactive
-from shinywidgets import render_plotly, output_widget
+from shinywidgets import render_plotly, output_widget, render_widget
 from datetime import datetime
 import pandas as pd
 import plotly.express as px
-
-PLOTS = 2
-
 import re
 
+PLOTS = 1
+
 def parse_parameterised_sql(sql) -> set[str]:
-    parameter_universe_with_colon = set(re.findall(r':[a-zA-Z_][a-zA-Z-_]*(?=\s|,|\)|$)', sql))
-    return {param[1:] for param in parameter_universe_with_colon}
+    matches = set(re.findall(r'\{(.*?)\}', sql))
+    parameter_universe = {}
+
+    for match in matches:
+        parts = [p.strip() for p in match.split(',')]
+        param_id = parts[0]
+        kv_pairs = parts[1:]
+
+        param_dict = {}
+        for kv in kv_pairs:
+            if '=' in kv:
+                k = kv.split('=')[0].strip()
+                v = kv.split('=')[1].strip()
+                if k in ['min', 'max', 'step']:
+                    v = float(v)
+                param_dict[k] = v
+            else:
+                # For robustness — handle invalid key-value cases
+                continue
+
+        parameter_universe[param_id] = param_dict
+    return parameter_universe
 
 df_columns = ["agg_metric_period", "agg_metric_value", "is_spike"]
 df = pd.DataFrame(
@@ -46,10 +65,10 @@ def make_items():
                 ),
                 ui.card(
                     ui.card_header("Input"),
-                    ui.input_slider(f"slider_{i}", f"Slider {i}", value=3, min=1, max=i + 2, step=i),
+                    id=f"input_card_{i}",
                 ),
                 width="100%",
-                col_widths=[9, 3],
+                col_widths=[8, 4],
             )
         )
         for i in range(1, PLOTS + 1)
@@ -60,10 +79,10 @@ app_ui = ui.page_fluid(
     ui.card(
         ui.card_header("Enter parameterised SQL"),
         ui.layout_columns(
-            ui.input_text_area("sql_input", label="SQL Input", value="SELECT * FROM table WHERE period = :period", rows=6, width="100%"),
-            ui.output_text_verbatim("output_sql_parameters"),
+            ui.input_text_area("sql_input", label="SQL Input", value="SELECT * FROM stocks WHERE price > 5 AND {ticker, type=slider, min=1, max=10, step=1} AND {my_param, type=text_box}", rows=6, width="100%"),
+            ui.output_text_verbatim("output_sql_parameters", ),
             width="100%",
-            col_widths=[8, 4],
+            col_widths=[6, 6],
         ),
     ),
     ui.input_action_button("submit_query", "Submit Query"),
@@ -71,9 +90,9 @@ app_ui = ui.page_fluid(
 )
 
 def server(input, output, session):
-    parameter_universe = reactive.Value(set())
-
-    @render_plotly
+    parameter_universe = reactive.Value(dict())
+    
+    @render_widget
     def plot_1():
         return px.scatter(
             df,
@@ -89,11 +108,47 @@ def server(input, output, session):
         parameterised_sql = input.sql_input()
         parameter_universe_ = parse_parameterised_sql(parameterised_sql)
         parameter_universe.set(parameter_universe_)
-        
+
+        to_add = {"slider": [], "text_box": []}
+        cnt = 0
+        # update UI by inserting slider and text box inputs dynamically for parameters
+        for param_id, param_info in parameter_universe_.items():
+            cnt += 1
+            if param_info.get("type") == "slider":
+                to_add["slider"].append(
+                    ui.input_slider(
+                        f"slider_{param_id}_{cnt}",
+                        label=f"Slider for {param_id}",
+                        value=param_info.get("min", 1),
+                        min=param_info.get("min", 1),
+                        max=param_info.get("max", 10),
+                        step=param_info.get("step", 1),
+                    ),
+                )
+            elif param_info.get("type") == "text_box":
+                to_add["text_box"].append(
+                    ui.input_text(
+                        f"text_box_{param_id}_{cnt}",
+                        label=f"Text box for {param_id}",
+                        value=param_info.get("default", ""),
+                    ),
+                )
+            
+        ui.insert_ui(
+            ui=to_add["text_box"],
+            selector="#input_card_1",
+            session=session,
+        )
+        ui.insert_ui(
+            ui=to_add["slider"],
+            selector="#input_card_1",
+            session=session,
+        )
+
     @render.text
     def output_sql_parameters():
         parameter_universe_ = parameter_universe.get()
-        return "\n".join(sorted(parameter_universe_)) if parameter_universe_ else "No parameters found in SQL input."
+        return str(parameter_universe_) if parameter_universe_ else "No parameters found in SQL input."
     
 
 app = App(app_ui, server)
