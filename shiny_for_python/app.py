@@ -8,6 +8,12 @@ import plotly.express as px
 
 PLOTS = 2
 
+import re
+
+def parse_parameterised_sql(sql) -> set[str]:
+    parameter_universe_with_colon = set(re.findall(r':[a-zA-Z_][a-zA-Z-_]*(?=\s|,|\)|$)', sql))
+    return {param[1:] for param in parameter_universe_with_colon}
+
 df_columns = ["agg_metric_period", "agg_metric_value", "is_spike"]
 df = pd.DataFrame(
     {
@@ -51,8 +57,17 @@ def make_items():
 
 app_ui = ui.page_fluid(
     ui.panel_title("Dynamic number of plots"),
+    ui.card(
+        ui.card_header("Enter parameterised SQL"),
+        ui.layout_columns(
+            ui.input_text_area("SQL_INPUT", label="SQL Input", value="SELECT * FROM table WHERE period = :period", rows=6, width="100%"),
+            ui.output_text_verbatim("output_sql_parameters"),
+            width="100%",
+            col_widths=[8, 4],
+        ),
+    ),
+    ui.input_action_button("submit_query", "Submit Query"),
     ui.accordion(*make_items(), id="acc", multiple=True),
-
 )
 
 def server(input, output, session):
@@ -75,5 +90,16 @@ def server(input, output, session):
             color="is_spike",
             title=f"Plot 2: Slider value is {input.slider_2()}",
         )
+    
+    @reactive.effect
+    @reactive.event(input.submit_query)
+    def _handle_submit_query():
+        parameterised_sql = input.SQL_INPUT()
+        
+    @render.text
+    def output_sql_parameters():
+        parameterised_sql = input.SQL_INPUT()
+        parameter_universe = parse_parameterised_sql(parameterised_sql)
+        return "\n".join(sorted(parameter_universe)) if parameter_universe else "No parameters found in SQL input."
 
 app = App(app_ui, server)
