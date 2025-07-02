@@ -22,6 +22,8 @@ def slow_sum(x, y):
     return x + y
 
 def server(input, output, session):
+    out = reactive.Value("Hello")
+    
     @ui.bind_task_button(button_id="btn")
     @reactive.extended_task
     async def sum_values(x, y):
