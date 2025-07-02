@@ -60,7 +60,7 @@ app_ui = ui.page_fluid(
     ui.card(
         ui.card_header("Enter parameterised SQL"),
         ui.layout_columns(
-            ui.input_text_area("SQL_INPUT", label="SQL Input", value="SELECT * FROM table WHERE period = :period", rows=6, width="100%"),
+            ui.input_text_area("sql_input", label="SQL Input", value="SELECT * FROM table WHERE period = :period", rows=6, width="100%"),
             ui.output_text_verbatim("output_sql_parameters"),
             width="100%",
             col_widths=[8, 4],
@@ -71,6 +71,8 @@ app_ui = ui.page_fluid(
 )
 
 def server(input, output, session):
+    parameter_universe = reactive.Value(set())
+
     @render_plotly
     def plot_1():
         return px.scatter(
@@ -80,26 +82,18 @@ def server(input, output, session):
             color="is_spike",
             title=f"Plot 1: Slider value is {input.slider_1()}",
         )
-    
-    @render_plotly
-    def plot_2():
-        return px.scatter(
-            df,
-            x="agg_metric_period",
-            y="agg_metric_value",
-            color="is_spike",
-            title=f"Plot 2: Slider value is {input.slider_2()}",
-        )
-    
+        
     @reactive.effect
     @reactive.event(input.submit_query)
     def _handle_submit_query():
-        parameterised_sql = input.SQL_INPUT()
+        parameterised_sql = input.sql_input()
+        parameter_universe_ = parse_parameterised_sql(parameterised_sql)
+        parameter_universe.set(parameter_universe_)
         
     @render.text
     def output_sql_parameters():
-        parameterised_sql = input.SQL_INPUT()
-        parameter_universe = parse_parameterised_sql(parameterised_sql)
-        return "\n".join(sorted(parameter_universe)) if parameter_universe else "No parameters found in SQL input."
+        parameter_universe_ = parameter_universe.get()
+        return "\n".join(sorted(parameter_universe_)) if parameter_universe_ else "No parameters found in SQL input."
+    
 
 app = App(app_ui, server)
