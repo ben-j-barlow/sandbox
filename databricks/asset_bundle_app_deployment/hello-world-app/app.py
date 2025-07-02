@@ -3,11 +3,15 @@ from shiny import App, ui, render, reactive
 from databricks.sdk import config
 from databricks import sql
 import os
+import logging
+
 
 # Defined in `app.yaml`
 assert os.getenv("DATABRICKS_WAREHOUSE_ID"), (
     "DATABRICKS_WAREHOUSE_ID must be set in app.yaml."
 )
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 _INITIAL_QUERY = """
 SELECT
@@ -71,6 +75,9 @@ cfg = config.Config()
 
 
 def server(input, output, session):
+    HOST = cfg.host
+    logger.info(f"HOST {HOST}")
+        
     # Define the extended task to execute the query asynchronously
     @ui.bind_task_button(button_id="submit_query")
     @reactive.extended_task
