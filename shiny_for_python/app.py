@@ -1,5 +1,5 @@
 import numpy as np
-from shiny import ui, render, App, module, reactive
+from shiny import ui, render, App, module, reactive, req
 from shinywidgets import output_widget, render_widget
 import pandas as pd
 import plotly.express as px
@@ -161,18 +161,23 @@ app_ui = ui.page_fluid(
     ui.input_action_button("submit_query", "Submit Query"),
     ui.layout_columns(
         ui.card(
-            ui.card_header(f"Plot"),
-            ui.TagList(
-                output_widget("display_plot"),
-                ui.output_text("display_query"),
-            ),
+            ui.card_header("Plot"),
+            output_widget("display_plot", width="100%", height="400px"),
+            id="plot_card",
             full_screen=True,
         ),
-        ui.card(
-            ui.card_header("Input"),
-            ui.input_action_button(id=f"run_query", label="Run Query"),
-            ui.output_ui("user_input_ui_components"),
-            id=f"input_card",
+        ui.navset_card_tab(
+            ui.nav_panel(
+                "Input",
+                ui.TagList(
+                    ui.input_action_button(id=f"run_query", label="Run Query"),
+                    ui.output_ui("user_input_ui_components"),
+                ),
+            ),
+            ui.nav_panel(
+                "Query",
+                ui.output_text("display_query"),
+            ),
         ),
         width="100%",
         col_widths=[8, 4],
@@ -182,11 +187,13 @@ app_ui = ui.page_fluid(
 
 def server(input, output, session):
     parameter_universe = reactive.Value(list())
-    parameterised_sql = None
+    parameterised_sql = reactive.Value("")
 
     @reactive.calc
     def compile_query():
         parameter_universe_ = parameter_universe.get()
+        if not parameter_universe_:
+            return ""
 
         # build {param_identifier: value} dict
         for_replace = {
@@ -199,7 +206,7 @@ def server(input, output, session):
         # use {param_identifier: value} dict to compile the query
         pattern = re.compile("|".join(map(re.escape, for_replace.keys())))
         compiled_query = pattern.sub(
-            lambda match: for_replace[match.group(0)], parameterised_sql
+            lambda match: for_replace[match.group(0)], req(parameterised_sql.get())
         )
         return compiled_query
 
@@ -215,9 +222,12 @@ def server(input, output, session):
         )
 
     @render.text
-    @reactive.event(input.run_query)
     def display_query():
-        return compile_query()
+        to_display = compile_query()
+        if not to_display:
+            return "Nothing to display. Please run a query first."
+        return to_display
+        
 
     @render.ui
     @reactive.event(parameter_universe)
@@ -250,10 +260,9 @@ def server(input, output, session):
 
     @reactive.effect
     @reactive.event(input.submit_query)
-    def _handle_submit_query():
-        # Parse the parameterised SQL input
-        parameterised_sql = input.sql_input()
-        parameter_universe_ = parse_parameterised_sql(parameterised_sql)
+    def _parse_parameterised_sql():
+        parameterised_sql.set(input.sql_input())
+        parameter_universe_ = parse_parameterised_sql(parameterised_sql.get())
         parameter_universe.set(parameter_universe_)
 
     @render.text
