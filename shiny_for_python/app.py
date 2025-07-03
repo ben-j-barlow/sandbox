@@ -3,15 +3,28 @@ from shiny import ui, render, App, module, reactive, req
 from shinywidgets import output_widget, render_widget
 import pandas as pd
 import plotly.express as px
+import asyncio
 import re
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 import logging
+import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 INITIAL_QUERY = "SELECT * FROM stocks WHERE price > 5 AND my_var = {my_var, type=slider, min=1, max=10, step=1} AND {row_condition, type=text_box}"
+
+try:
+    from databricks import sql
+
+    SERVER_HOSTNAME = os.getenv("SERVER_HOSTNAME")
+    SQL_WAREHOUSE_ID = os.getenv("SQL_WAREHOUSE_ID")
+    SQL_USER_TOKEN = os.getenv("SQL_USER_TOKEN")
+except (KeyError, ImportError) as e:
+    SERVER_HOSTNAME = None
+    SQL_WAREHOUSE_ID = None
+    SQL_USER_TOKEN = None
 
 
 @dataclass
@@ -139,6 +152,24 @@ def get_plot_input_id(param_id: str, param_type: str) -> str:
     return f"input_{param_type}_{param_id}"
 
 
+def execute_query(connection, statement, max_rows=10000):
+    """
+    Executes an SQL statement and fetches up to `max_rows` results.
+    """
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(statement)
+            res = (
+                cursor.fetchmany_arrow(max_rows)
+                if max_rows
+                else cursor.fetchall_arrow()
+            )
+        return res
+    except Exception as e:
+        print(f"Error executing query: {e}")
+        return e
+
+
 app_ui = ui.page_fluid(
     ui.panel_title("Dynamic number of plots"),
     ui.card(
@@ -170,7 +201,7 @@ app_ui = ui.page_fluid(
             ui.nav_panel(
                 "Input",
                 ui.TagList(
-                    ui.input_action_button(id=f"run_query", label="Run Query"),
+                    ui.input_task_button(id=f"run_query", label="Run Query"),
                     ui.output_ui("user_input_ui_components"),
                 ),
             ),
@@ -188,6 +219,31 @@ app_ui = ui.page_fluid(
 def server(input, output, session):
     parameter_universe = reactive.Value(list())
     parameterised_sql = reactive.Value("")
+
+    # Define the extended task to execute the query asynchronously
+    @ui.bind_task_button(button_id="run_query")
+    @reactive.extended_task
+    async def run_query_task(query: str):
+        if SERVER_HOSTNAME and SQL_WAREHOUSE_ID and SQL_USER_TOKEN:
+            try:
+                # Connect to SQL warehouse inside the task to ensure thread safety
+                connection = sql.connect(
+                    server_hostname=SERVER_HOSTNAME,
+                    http_path=f"/sql/1.0/warehouses/{SQL_WAREHOUSE_ID}",
+                    user_token=SQL_USER_TOKEN,
+                    session_configuration={"STATEMENT_TIMEOUT": "60"},
+                )
+                res = await asyncio.to_thread(execute_query, connection, query)
+                ui.update_action_button("cancel_query", disabled=True)
+                return res
+            except Exception as e:
+                return e
+        else:
+            return df
+
+    @reactive.event(input.run_query)
+    def handle_run_query():
+        run_query_task(compile_query())
 
     @reactive.calc
     def compile_query():
@@ -227,7 +283,6 @@ def server(input, output, session):
         if not to_display:
             return "Nothing to display. Please run a query first."
         return to_display
-        
 
     @render.ui
     @reactive.event(parameter_universe)
