@@ -17,13 +17,15 @@ app_ui = ui.page_fluid(
 # process instead, use concurrent.futures.ProcessPoolExecutor.
 pool = concurrent.futures.ThreadPoolExecutor()
 
+
 def slow_sum(x, y):
     time.sleep(5)  # Simulate a slow synchronous task
     return x + y
 
+
 def server(input, output, session):
     out = reactive.Value("Hello")
-    
+
     @ui.bind_task_button(button_id="btn")
     @reactive.extended_task
     async def sum_values(x, y):
@@ -38,6 +40,7 @@ def server(input, output, session):
     @render.text
     def sum():
         return str(sum_values.result())
+
 
 app = App(app_ui, server)
 app.on_shutdown(pool.shutdown)

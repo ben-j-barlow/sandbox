@@ -9,6 +9,7 @@ MAX_PLOTS = 5
 def plot_ui():
     return ui.output_plot("plot")
 
+
 @module.server
 def plot_server(
     input, output, session, plot_id: int, mult: int, max_plots: int = MAX_PLOTS
@@ -25,6 +26,7 @@ def plot_server(
         ax.set_ylim(0, max_plots)
         ax.set_title(f"1: {plot_id}. mult is {mult}. n is {max_plots}")
         return fig
+
 
 app_ui = ui.page_fluid(
     ui.panel_title("Dynamic number of plots"),
