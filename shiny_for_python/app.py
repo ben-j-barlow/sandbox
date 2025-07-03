@@ -206,15 +206,12 @@ def server(input, output, session):
     @render_widget
     @reactive.event(input.run_query)
     def display_plot():
-        slider_val = getattr(
-            input, get_plot_input_id(param_id="my_var", param_type="slider")
-        )()
         return px.scatter(
             df,
             x="agg_metric_period",
             y="agg_metric_value",
             color="is_spike",
-            title=f"Plot 1: Slider value is {slider_val}",
+            title=f"Plot 1",
         )
 
     @render.text
