@@ -61,16 +61,6 @@ class TextBoxParamConfig(ParamConfig):
             self.default = "xyz = 2"
         self.default = str(self.default)
 
-
-def compile_query(input, parameter_universe: list[ParamConfig], plot_id: int, parameterised_query: str):
-    # build {param_identifier: value} dict
-    for_replace = {ele.sql_identifier: str(getattr(input, get_plot_input_id(plot_id, ele.param_id, ele.param_type))()) for ele in parameter_universe}
-    
-    # use {param_identifier: value} dict to compile the query
-    pattern = re.compile("|".join(map(re.escape, for_replace.keys())))
-    compiled_query = pattern.sub(lambda match: for_replace[match.group(0)], parameterised_query)
-    return compiled_query
-
 def parse_parameterised_sql(sql) -> set[ParamConfig]:
     matches = set(re.findall(r'\{(.*?)\}', sql))
     parameter_universe = list()
@@ -124,17 +114,9 @@ def append_parenthesis(match: str) -> str:
     "Append {} parentheses at start and finish."    
     return "{" + match + "}"
 
-def get_plot_input_id(plot_id: int, param_id: str, param_type: str) -> str:
+def get_plot_input_id(param_id: str, param_type: str) -> str:
     """Generate a unique input ID for a plot parameter."""
-    return f"input_plot_{plot_id}_{param_type}_{param_id}"
-
-def get_plot_input_div_id(plot_id: int, param_id: str, param_type: str) -> str:
-    """Generate a unique input ID for a plot parameter."""
-    return f"div_{get_plot_input_id(plot_id, param_id, param_type)}"
-
-def get_selector_for_plot_input_removal(plot_id: int) -> str:
-    """Generate a selector for removing all input elements for a specific plot."""
-    return f'div[id^="div_input_plot_{plot_id}"]'
+    return f"input_{param_type}_{param_id}"
     
 def make_items():
     return [
@@ -142,18 +124,18 @@ def make_items():
             f"Section {i}",                   
             ui.layout_columns(
                 ui.card(
-                    ui.card_header(f"Plot {i}"),
+                    ui.card_header(f"Plot"),
                     ui.TagList(
-                        output_widget(f"plot_{i}_plot"),
-                        ui.output_text(f"plot_{i}_query"),
+                        output_widget("display_plot"),
+                        ui.output_text("display_query"),
                     ),
                     full_screen=True,
                 ),
                 ui.card(
                     ui.card_header("Input"),
-                    ui.input_action_button(id=f"run_query_{i}", label="Run Query"),
+                    ui.input_action_button(id=f"run_query", label="Run Query"),
                     ui.output_ui("user_input_ui_components"),
-                    id=f"input_card_{i}",
+                    id=f"input_card",
                 ),
                 width="100%",
                 col_widths=[8, 4],
@@ -179,25 +161,26 @@ app_ui = ui.page_fluid(
 
 
 def server(input, output, session):
-    plot_id = 1
     parameter_universe = reactive.Value(list())
     parameterised_sql = INITIAL_QUERY
 
-    @reactive.effect
-    @reactive.event(input.run_query_1)
-    def _():
+
+    @reactive.calc
+    def compile_query():
         parameter_universe_ = parameter_universe.get()
-        compile_query(
-            input,
-            parameter_universe=parameter_universe_,
-            plot_id=plot_id,
-            parameterised_query=parameterised_sql,
-        )
+
+        # build {param_identifier: value} dict
+        for_replace = {ele.sql_identifier: str(getattr(input, get_plot_input_id(ele.param_id, ele.param_type))()) for ele in parameter_universe_}
+        
+        # use {param_identifier: value} dict to compile the query
+        pattern = re.compile("|".join(map(re.escape, for_replace.keys())))
+        compiled_query = pattern.sub(lambda match: for_replace[match.group(0)], parameterised_sql)
+        return compiled_query
 
     @render_widget
-    @reactive.event(input.run_query_1)
-    def plot_1_plot():
-        slider_val = getattr(input, get_plot_input_id(plot_id=1, param_id="my_var", param_type="slider"))()
+    @reactive.event(input.run_query)
+    def display_plot():
+        slider_val = getattr(input, get_plot_input_id(param_id="my_var", param_type="slider"))()
         return px.scatter(
             df,
             x="agg_metric_period",
@@ -207,16 +190,10 @@ def server(input, output, session):
         )
     
     @render.text
-    @reactive.event(input.run_query_1)
-    def plot_1_query():
-        parameter_universe_ = parameter_universe.get()
-        return compile_query(
-            input,
-            parameter_universe=parameter_universe_,
-            plot_id=plot_id,
-            parameterised_query=parameterised_sql,
-        )
-
+    @reactive.event(input.run_query)
+    def display_query():
+        return compile_query()
+    
     @render.ui
     @reactive.event(parameter_universe)
     def user_input_ui_components():
@@ -227,7 +204,7 @@ def server(input, output, session):
 
             if isinstance(param_config, SliderParamConfig):
                 to_return.append(ui.input_slider(
-                    get_plot_input_id(plot_id, param_id, param_config.param_type),
+                    get_plot_input_id(param_id, param_config.param_type),
                     label=param_id,
                     value=param_config.default,
                     min=param_config.min_val,
@@ -236,7 +213,7 @@ def server(input, output, session):
                 ))
             elif isinstance(param_config, TextBoxParamConfig):
                 to_return.append(ui.input_text(
-                    get_plot_input_id(plot_id, param_id, param_config.param_type),
+                    get_plot_input_id(param_id, param_config.param_type),
                     label=param_id,
                     value=param_config.default,
                 ))
