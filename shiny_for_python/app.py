@@ -152,6 +152,7 @@ def make_items():
                 ui.card(
                     ui.card_header("Input"),
                     ui.input_action_button(id=f"run_query_{i}", label="Run Query"),
+                    ui.output_ui("user_input_ui_components"),
                     id=f"input_card_{i}",
                 ),
                 width="100%",
@@ -173,7 +174,6 @@ app_ui = ui.page_fluid(
         ),
     ),
     ui.input_action_button("submit_query", "Submit Query"),
-    ui.input_action_button("remove_ui", "Remove UI"),
     ui.accordion(*make_items(), id="acc", multiple=True),
 )
 
@@ -217,12 +217,31 @@ def server(input, output, session):
             parameterised_query=parameterised_sql,
         )
 
+    @render.ui
+    @reactive.event(parameter_universe)
+    def user_input_ui_components():
+        to_return = ui.TagList()
+        parameter_universe_ = parameter_universe.get()
+        for param_config in parameter_universe_:
+            param_id = param_config.param_id
 
-    @reactive.effect
-    @reactive.event(input.remove_ui)
-    def _handle_remove_ui():
-        ui.remove_ui(selector=get_selector_for_plot_input_removal(plot_id=1), session=session, multiple=True)
-
+            if isinstance(param_config, SliderParamConfig):
+                to_return.append(ui.input_slider(
+                    get_plot_input_id(plot_id, param_id, param_config.param_type),
+                    label=param_id,
+                    value=param_config.default,
+                    min=param_config.min_val,
+                    max=param_config.max_val,
+                    step=param_config.step,
+                ))
+            elif isinstance(param_config, TextBoxParamConfig):
+                to_return.append(ui.input_text(
+                    get_plot_input_id(plot_id, param_id, param_config.param_type),
+                    label=param_id,
+                    value=param_config.default,
+                ))
+        return to_return  
+        
     @reactive.effect
     @reactive.event(input.submit_query)
     def _handle_submit_query():
@@ -231,32 +250,7 @@ def server(input, output, session):
         parameter_universe_ = parse_parameterised_sql(parameterised_sql)
         parameter_universe.set(parameter_universe_)
 
-        # Add new UI components based on the parsed parameters
-        for param_config in parameter_universe_:
-            param_id = param_config.param_id
-
-            if isinstance(param_config, SliderParamConfig):
-                to_add = ui.input_slider(
-                    get_plot_input_id(plot_id, param_id, param_config.param_type),
-                    label=param_id,
-                    value=param_config.default,
-                    min=param_config.min_val,
-                    max=param_config.max_val,
-                    step=param_config.step,
-                )
-            elif isinstance(param_config, TextBoxParamConfig):
-                to_add = ui.input_text(
-                    get_plot_input_id(plot_id, param_id, param_config.param_type),
-                    label=param_id,
-                    value=param_config.default,
-                )
-                
-            ui.insert_ui(
-                ui=ui.div(to_add, id=get_plot_input_div_id(plot_id=plot_id, param_id=param_id, param_type=param_config.param_type)),
-                selector=f"#input_card_{plot_id}",
-                session=session,
-            )
-
+        
     @render.text
     def output_sql_parameters():
         parameter_universe_ = parameter_universe.get()
