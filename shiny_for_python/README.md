@@ -38,11 +38,14 @@ def handle_query():
 
 * [req](https://shiny.posit.co/r/reference/shiny/0.14/req.html)
 * use `ui.input_task_button` instead of `ui.input_action_button` to invoke an extended task task, since the former automatically prevents subsequent clicks until the task completes
+* linking multiple Plotly plots (see NBA Dashboard in Gallery)
+* nice layout (see Stock Explorer Dashboard in Gallery)
 
-## Dynamic UI and Plots
+## Dynamic UI, Plots and Modules
 
 * [Beyond R Shiny: Shiny for Python's Clean Design for Dynamic Plot Management](https://www.appsilon.com/post/shiny-for-python-clean-design-for-dynamic-plot-management)
 * [Dynamic UI Docs](https://shiny.posit.co/py/api/express/express.ui.panel_conditional.html)
+* [How to use modules](https://www.appsilon.com/post/shiny-for-python-custom-module)
 
 ## Understanding Non Blocking Tasks
 
