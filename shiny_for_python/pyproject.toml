@@ -1,0 +1,21 @@
+[project]
+name = "shiny-for-python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "databricks-connect>=14.3.2",
+    "databricks-sdk>=0.57.0",
+    "matplotlib>=3.10.3",
+    "numpy>=2.3.0",
+    "pandas>=2.3.0",
+    "plotly>=6.1.2",
+    "shiny>=1.4.0",
+    "shinywidgets>=0.6.2",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.0",
+]
