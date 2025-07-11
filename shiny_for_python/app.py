@@ -26,7 +26,6 @@ except (KeyError, ImportError) as e:
     SQL_WAREHOUSE_ID = None
     SQL_USER_TOKEN = None
 
-
 @dataclass
 class ParamConfig(ABC):
     """Base parameter configuration using a dataclass."""
@@ -169,28 +168,9 @@ def execute_query(connection, statement, max_rows=10000):
         print(f"Error executing query: {e}")
         return e
 
-
-app_ui = ui.page_fluid(
-    ui.panel_title("Dynamic number of plots"),
-    ui.card(
-        ui.card_header("Enter parameterised SQL"),
-        ui.layout_columns(
-            ui.input_text_area(
-                "sql_input",
-                label="SQL Input",
-                value=INITIAL_QUERY,
-                rows=6,
-                width="100%",
-            ),
-            ui.output_text_verbatim(
-                "output_sql_parameters",
-            ),
-            width="100%",
-            col_widths=[6, 6],
-        ),
-    ),
-    ui.input_action_button("submit_query", "Submit Query"),
-    ui.layout_columns(
+@module.ui
+def graph_ui():
+    return ui.layout_columns(
         ui.card(
             ui.card_header("Plot"),
             output_widget("display_plot", width="100%", height="400px"),
@@ -212,14 +192,12 @@ app_ui = ui.page_fluid(
         ),
         width="100%",
         col_widths=[8, 4],
-    ),
-)
+    )
 
 
-def server(input, output, session):
-    parameter_universe = reactive.Value(list())
-    parameterised_sql = reactive.Value("")
-
+@module.server
+def graph_server(input, output, session, parameter_universe, parameterised_sql):
+    
     # Define the extended task to execute the query asynchronously
     @ui.bind_task_button(button_id="run_query")
     @reactive.extended_task
@@ -313,12 +291,38 @@ def server(input, output, session):
                 )
         return to_return
 
-    @reactive.effect
-    @reactive.event(input.submit_query)
-    def _parse_parameterised_sql():
-        parameterised_sql.set(input.sql_input())
-        parameter_universe_ = parse_parameterised_sql(parameterised_sql.get())
-        parameter_universe.set(parameter_universe_)
+
+
+app_ui = ui.page_fluid(
+    ui.panel_title("Dynamic number of plots"),
+    ui.card(
+        ui.card_header("Enter parameterised SQL"),
+        ui.layout_columns(
+            ui.input_text_area(
+                "sql_input",
+                label="SQL Input",
+                value=INITIAL_QUERY,
+                rows=6,
+                width="100%",
+            ),
+            ui.output_text_verbatim(
+                "output_sql_parameters",
+            ),
+            width="100%",
+            col_widths=[6, 6],
+        ),
+    ),
+    ui.input_action_button("submit_query", "Submit Query"),
+    graph_ui(id="graph_one"),
+    graph_ui(id="graph_two"),
+)
+
+def server(input, output, session):
+    parameter_universe = reactive.Value(list())
+    parameterised_sql = reactive.Value("")
+
+    graph_server("graph_one", parameter_universe=parameter_universe, parameterised_sql=parameterised_sql)
+    graph_server("graph_two", parameter_universe=parameter_universe, parameterised_sql=parameterised_sql)
 
     @render.text
     def output_sql_parameters():
@@ -326,6 +330,12 @@ def server(input, output, session):
         if parameter_universe_:
             return "\n".join([ele.param_id for ele in parameter_universe_])
         return "No parameters found in SQL input."
-
+    
+    @reactive.effect
+    @reactive.event(input.submit_query)
+    def _parse_parameterised_sql():
+        parameterised_sql.set(input.sql_input())
+        parameter_universe_ = parse_parameterised_sql(parameterised_sql.get())
+        parameter_universe.set(parameter_universe_)
 
 app = App(app_ui, server)

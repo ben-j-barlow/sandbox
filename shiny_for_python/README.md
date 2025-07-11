@@ -1,6 +1,6 @@
 # Shiny for Python
 
-This was produced whilst learning how to build a Databricks-hosted app that reads from Unity Catalog. Notes are therefore tailored to his app.
+This was produced whilst learning how to build a Databricks-hosted app that reads from Unity Catalog. Notes are therefore tailored to this app.
 
 ## General
 

@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
+    "databricks-connect>=14.3.2",
+    "databricks-sdk>=0.57.0",
     "matplotlib>=3.10.3",
     "numpy>=2.3.0",
     "pandas>=2.3.0",
