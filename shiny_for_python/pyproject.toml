@@ -1,7 +1,7 @@
 [project]
 name = "shiny-for-python"
 version = "0.1.0"
-description = "Add your description here"
+description = "Exploring Shiny for Python"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
